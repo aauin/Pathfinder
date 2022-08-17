@@ -1,10 +1,23 @@
 import pygame
+import button
 import colorspy as color
 from queue import PriorityQueue
 
 SIZE = 800
-WINDOW = pygame.display.set_mode((SIZE, SIZE))
-pygame.display.set_caption("A* Search Visualizer")
+EXTENDED_WINDOW = pygame.display.set_mode((SIZE, SIZE+100))
+cropped = (0, 0, SIZE, SIZE+1)
+WINDOW = EXTENDED_WINDOW.subsurface(cropped)
+pygame.display.set_caption("A* Search Visualizer by Erwin Laird")
+
+# load button images
+search_img = pygame.image.load('search.png').convert_alpha()
+generate_img = pygame.image.load('generate.png').convert_alpha()
+clear_img = pygame.image.load('clear.png').convert_alpha()
+
+# create button instances
+search_button = button.Button(100, 820, search_img, .5)
+generate_button = button.Button(330, 820, generate_img, .5)
+clear_button = button.Button(580, 820, clear_img, .5)
 
 
 class Cell:
@@ -73,6 +86,7 @@ def h_score(point1, point2):  # heuristic distance from goal
 
 
 def trace_path(previous_cells, current, draw):
+    current.make_goal()
     while current in previous_cells:
         current = previous_cells[current]
         current.make_path()
@@ -101,7 +115,6 @@ def algorithm(draw, grid, start, goal):
         if current == goal:
             trace_path(previous_cells, goal, draw)
             start.make_start()
-            goal.make_goal()
             return True
 
         for neighbor in current.get_neighbors():
@@ -135,7 +148,7 @@ def make_grid(rowcols, size):
 
 def draw_grid(window, rowcols, size):
     gap = size // rowcols
-    for row in range(rowcols):
+    for row in range(rowcols+1):
         pygame.draw.line(window, color.gray, (0, row * gap), (size, row * gap))
     for column in range(rowcols):
         pygame.draw.line(window, color.gray, (column * gap, 0), (column * gap, size))
@@ -167,12 +180,23 @@ def main(window, size):
 
     while is_running:
         draw(window, grid, rowcols, size)
+
+        if search_button.draw(EXTENDED_WINDOW):
+            print('START')
+        if generate_button.draw(EXTENDED_WINDOW):
+            print('EXIT')
+        if clear_button.draw(EXTENDED_WINDOW):
+            print('EXITfsdgdf')
+
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
 
             if pygame.mouse.get_pressed()[0]:  # left-click
                 position = pygame.mouse.get_pos()
+                if position[0] > SIZE or position[1] > SIZE:
+                    break
                 row, column = get_clicked_pos(position, rowcols, size)
                 cell = grid[row][column]
                 if start is None:
@@ -186,12 +210,14 @@ def main(window, size):
 
             elif pygame.mouse.get_pressed()[2]:  # right-click
                 position = pygame.mouse.get_pos()
+                if position[0] > SIZE or position[1] > SIZE:
+                    break
                 row, column = get_clicked_pos(position, rowcols, size)
                 cell = grid[row][column]
                 cell.reset()
                 if cell is start:
                     start = None
-                elif cell is goal:
+                if cell is goal:
                     goal = None
 
             if event.type == pygame.KEYDOWN:
@@ -205,6 +231,8 @@ def main(window, size):
                     start = None
                     goal = None
                     grid = make_grid(rowcols, size)
+
+        pygame.display.update()
 
     pygame.quit()
 
